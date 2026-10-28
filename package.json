@@ -1,0 +1,54 @@
+{
+  "name": "dsh-mode-widget",
+  "version": "0.2.0-rc.1",
+  "description": "DSH 四态模式轮盘：标准 / 计划 / 审问 / 限制。在输入框旁切换模式，控制模型的行为约束（纯本地，无额外注入时零开销）",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "mode",
+    "widget"
+  ],
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "icon": "./icon.png",
+  "files": [
+    "lib",
+    "assets",
+    "docs",
+    "icon.png",
+    "cordis.patch.yml",
+    "dsh-plugin.json",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
+    "CHANGELOG.md"
+  ],
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "inject": ["@deepseek-ai/dsh-client-ui-conversation"]
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "author": "MeteorNOX",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "verify": "node scripts/verify.mjs",
+    "test": "node scripts/test-client-contract.mjs && node scripts/test-plan-availability.mjs && node scripts/test-session-core.mjs && node scripts/test-host-core.mjs && node scripts/test-client-state.mjs && node scripts/test-release-safety.mjs"
+  },
+  "homepage": "https://github.com/MeteorNOX/dsh-mode-widget#readme",
+  "bugs": { "url": "https://github.com/MeteorNOX/dsh-mode-widget/issues" },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MeteorNOX/dsh-mode-widget.git"
+  }
+}

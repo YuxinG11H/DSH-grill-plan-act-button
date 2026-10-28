@@ -1,0 +1,11 @@
+# dsh-mode-widget — DSH bundle patch
+#
+# 桌面端：使用当前宿主内置的插件管理器安装本地 TGZ 或完整源码目录。
+# Web profile：可使用 dsh plugin --profile web add <安装规格>。
+# 当前未发布 npm 包，不要直接按裸包名安装；详见 README。
+#
+# 本文件把插件插进 profile 的配置树；id 必须全局唯一。
+
+- insert:
+    - id: dsh-mode-widget
+      name: dsh-mode-widget

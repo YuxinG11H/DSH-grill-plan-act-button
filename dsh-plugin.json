@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/T-Auto/dsh-std/main/packages/manifest/schema/dsh-plugin-0.15.schema.json",
+  "manifestVersion": "0.15",
+  "id": "meteornox.dsh-mode-widget",
+  "name": "DSH Mode Widget",
+  "version": "0.2.0-rc.1",
+  "facets": {
+    "host": {
+      "entry": "lib/index.js",
+      "apiVersion": "v1alpha1"
+    }
+  },
+  "requires": {
+    "contracts": []
+  },
+  "permissions": [
+    {
+      "name": "fs.meteornox.mode-state",
+      "scope": "$DSH_HOME/dsh-mode-widget",
+      "reason": "保存模式状态与用户偏好"
+
+    }
+  ],
+  "compat": {
+    "hosts": [
+      "deepseek-harness@>=0.2.0-rc.2 <0.3.0-0"
+    ]
+  },
+  "source": {
+    "repository": "https://github.com/MeteorNOX/dsh-mode-widget"
+  },
+  "license": "MIT"
+}
