@@ -76,7 +76,7 @@ test('user mode selection is deferred to the next turn and cannot weaken the act
   assert.equal(core.effectiveMode('a'), 'plan')
   core.setMode('a', 'standard')
   assert.equal(core.effectiveMode('a'), 'plan')
-  assert.equal(core.submit('a', 'still a planning turn').ok, true)
+  assert.equal(core.submit('a', 'still a planning turn').code, 'MODE_CHANGED', 'frozen mode does not restore eligibility after a new user mode selection')
   end(core, 'a', 2)
   start(core, 'a', 3)
   assert.equal(core.effectiveMode('a'), 'standard')

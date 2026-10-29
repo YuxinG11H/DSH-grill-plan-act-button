@@ -5,12 +5,14 @@ import fs from 'node:fs'
 import vm from 'node:vm'
 const source = fs.readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
 const reducer = source.slice(source.indexOf('  function applyPlanState('), source.indexOf('  function paint()'))
-const execute = source.slice(source.indexOf('  function fireExecute()'), source.indexOf('  // 偏好面板'))
+const execute = source.slice(source.indexOf('  function clearManual()'), source.indexOf('  // 偏好面板'))
 function fixture() {
   const timers = new Map(); let next = 1
   const scope = {
     state: { mode: 'standard', selectedMode: 'standard', protocolVersion: null, planRevision: -1, pending: false, planToken: null, prefs: {} },
-    disposed: false, EXPECTED_PROTOCOL: 2, planEpoch: null, retiredPlanEpochs: new Set(),
+    disposed: false, EXPECTED_PROTOCOL: 3, planEpoch: null, retiredPlanEpochs: new Set(),
+    viewId: 'test-view', viewAttached: true, attemptedManualTokens: new Set(), attemptedPlanTokens: new Set(), executeInFlight: false,
+    statusHelp: {}, errorEl: { hidden: true }, reportError(message) { scope.errorEl.textContent = message; scope.errorEl.hidden = false },
     streamEpoch: null, streamDisconnected: false, httpSequence: 0, acceptedHttpSequence: 0, planExpiryTimer: null,
     badge: { title: '' }, arrowEl: { title: '', disabled: false }, ZH: { plan: '计划', standard: '标准' },
     sessionId: 'a', paint() {}, syncPanel() {}, Date,
@@ -21,7 +23,7 @@ function fixture() {
   return { s: scope, timers }
 }
 const status = (epoch, revision, mode = 'plan', token = 'token') => ({
-  ok: true, protocolVersion: 2, coreBuild: 'test', planEpoch: epoch, planRevision: revision,
+  ok: true, protocolVersion: 3, coreBuild: 'test', planEpoch: epoch, planRevision: revision,
   mode, selectedMode: mode, modePending: false, pendingExecution: !!token, planToken: token,
   planTitle: token, planExpiresAt: Date.now() + 60000, prefs: {}, scope: 'per-session',
 })
@@ -55,7 +57,7 @@ test('a new stream epoch resets revision; prior epoch updates and old error enve
   assert(s.applyPlanState(status('B', 0, 'standard', null), true))
   assert.equal(s.applyPlanState(status('A', 91), true), false)
   assert.equal(s.applyState({ ok: false, protocolVersion: 1, planEpoch: 'A' }), false)
-  assert.equal(s.planEpoch, 'B'); assert.equal(s.state.protocolVersion, 2)
+  assert.equal(s.planEpoch, 'B'); assert.equal(s.state.protocolVersion, 3)
 })
 test('protocol mismatch fails closed and gives an actionable restart reason', () => {
   const { s } = fixture()
@@ -97,5 +99,5 @@ test('failed execute transport clears only its own unchanged eligibility', async
   s.applyPlanState(status('host', 1, 'plan', 'A'), true)
   s.fireExecute(); await flush(); await flush()
   assert.equal(s.state.pending, false); assert.equal(s.state.planToken, null)
-  assert(s.badge.title.includes('连接失败'))
+  assert(s.errorEl.textContent.includes('连接失败')); assert.equal(s.errorEl.hidden, false)
 })

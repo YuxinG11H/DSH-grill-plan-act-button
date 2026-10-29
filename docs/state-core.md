@@ -8,7 +8,7 @@
 - `session-core.mjs`：唯一运行时状态机。每个会话拥有选中模式、本轮固定模式、计划资格、输入去重、读取预算及执行相关性。
 - `index.js`：官方事件、工具、提示词与 HTTP/SSE 的适配层，不另存模式或“最近计划”。
 - `plan-availability.mjs`：旧类名兼容导出，指向同一个核心，不再维护另一套状态。
-- 客户端：显示宿主给出的状态。只有得到协议 V2 响应后才允许修改模式/执行；不乐观伪装已经切换成功。
+- 客户端：显示宿主给出的状态。只有得到当前协议 V3 响应后才允许修改模式/执行；不乐观伪装已经切换成功。
 
 ## 模式一致性
 
@@ -42,11 +42,21 @@
 
 ## 状态协议与运行版本
 
-`protocolVersion=2`，运行 build 为 `session-core-v2-20261028`。模式、计划资格、失败原因共享同一个 `planEpoch` / `planRevision`，客户端先校验版本和顺序再更新全部状态。
+`protocolVersion=3`，运行 build 为 `session-core-v3-planning-manual`，持久化 schema 仍为 V2。模式、计划资格、失败原因共享同一个 `planEpoch` / `planRevision`，客户端先校验版本和顺序再更新全部状态。
 
 有序 SSE 是宿主 epoch 的权威来源；迟到的、此前没见过的旧 HTTP epoch 不能覆盖新 SSE。没有流时 HTTP 请求序列也防止跨 epoch 倒退。同一 epoch 内以宿主 revision 排序。旧执行请求的网络错误不得清掉新计划。
 
 `GET /dsh-mode/diag` 返回实际运行的 build、协议、持久化版本和启动时间。磁盘文件更新、客户端 HMR、宿主重载是不同事情；本次升级必须完整重启宿主后再核对。
+
+## V3：手动继续与提问策略
+
+`POST /dsh-mode/state` 的 `attachView:true` 为会话登记当前页面 `viewId`；新页面实例会撤销旧手动资格。来自轮盘的显式切换使用 `manualTransition:true`，只有 PLAN／GRILL → BASE 成功切换才授予 `manualToken`。处理中仍保持固定轮次模式，结束后才能使用手动资格；新轮次会清除它。普通执行交接内部切换不调用这条授权路径。
+
+手动资格独立于 `planToken`，仅在当前页面、当前会话处于空闲标准模式且无排队任务时有效。`POST /dsh-mode/execute-manual` 核对 `manualToken` 和 `viewId` 后一次性消费，再复用现有交接与审批边界。不能将手动标识交给正常计划执行接口。两条路径都发送“现在请直接执行任务。”，均不自动重发，不在失败后恢复资格。
+
+偏好字段 `disablePlanQuestionCard=true`、`disableGrillQuestionCard=false` 接受布尔值。提示词生成时捕获策略，工具闸门沿用对应请求策略；中途改配置不改变已发送给模型的请求，下一请求采用新值。禁用时阻止 `ask_user_question`，要求改用必要的编号文字提问。标准模式提示词仍为空。
+
+无标记的正常规划轮次以 `PLAN_NOT_SUBMITTED` 解释未点亮的原因，不自动猜测计划完成。普通状态使用原生 title／无视觉浮层的辅助说明；只有手动按钮保留风险提醒浮层。
 
 ## V1 迁移
 

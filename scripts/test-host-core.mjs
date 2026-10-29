@@ -99,6 +99,8 @@ test('execution of A changes only A; duplicate clicks send once; correlated fail
   assert.equal((await h.api('/dsh-mode/state?session=B')).body.mode, 'grill')
   assert.equal((await h.api('/dsh-mode/execute', { sessionId: 'A', planToken: token })).body.ok, false)
   assert.equal(a.sent.length, 1)
+  assert.equal(a.sent[0].content[0].text, '现在请直接执行任务。')
+  assert.equal(submitted.body.pendingManual, false, 'blue automatic mode switch never grants manual')
   h.emit('A', 'turn/start', { turn: 2 }); const message = a.inbox.nextTurn.shift()
   h.events.emit('agent/inbox/claimed', { agent: a, message, turn: 2 }); h.emit('A', 'user/message', message)
   const change = (await h.api('/dsh-mode/state', { sessionId: 'A', mode: 'limit' })).body
@@ -140,7 +142,54 @@ test('runtime disposal preserves selected mode and invalidates tokens; diagnosti
   assert.equal(state.mode, 'plan'); assert(!state.pendingExecution)
   assert.equal((await h.api('/dsh-mode/execute', { sessionId: 'A', planToken: token })).body.ok, false)
   const diagnostic = (await h.api('/dsh-mode/diag?session=A')).body
-  assert.equal(diagnostic.runtime.protocolVersion, 2); assert.equal(diagnostic.runtime.stateSchemaVersion, 2)
+  assert.equal(diagnostic.runtime.protocolVersion, 3); assert.equal(diagnostic.runtime.stateSchemaVersion, 2)
   assert.equal(diagnostic.sessionState.statusCode, 'SESSION_UNLOADED')
   assert(!('agents' in diagnostic)); assert(!('sessions' in diagnostic))
+})
+test('question card defaults, independent preferences, and next-request guard agree with the prompt', async t => {
+ const h=await harness(t),a=h.add('A'),b=h.add('B')
+ await h.api('/dsh-mode/state',{sessionId:'A',mode:'plan'});await h.api('/dsh-mode/state',{sessionId:'B',mode:'grill'})
+ h.emit('A','turn/start',{turn:1});h.emit('B','turn/start',{turn:1})
+ const first=new AbortController().signal
+ assert(h.prompts[0].text({agent:a,signal:first}).includes('本模式问题卡已禁用'))
+ assert.equal((await h.gate({name:'ask_user_question',agent:a,signal:first},()=> 'allowed')).kind,'deny')
+ h.prompts[0].text({agent:b});assert.equal(await h.gate({name:'ask_user_question',agent:b},()=> 'allowed'),'allowed')
+ await h.api('/dsh-mode/state',{sessionId:'A',prefs:{disablePlanQuestionCard:false,disableGrillQuestionCard:true}})
+ assert.equal((await h.gate({name:'ask_user_question',agent:a,signal:first},()=> 'allowed')).kind,'deny','in-flight request retains captured setting')
+ const next=new AbortController().signal
+ h.prompts[0].text({agent:a,signal:next});assert.equal(await h.gate({name:'ask_user_question',agent:a,signal:next},()=> 'allowed'),'allowed')
+ h.prompts[0].text({agent:b});assert.equal((await h.gate({name:'ask_user_question',agent:b},()=> 'allowed')).kind,'deny')
+ assert.equal(h.store.modeFor('A'),'plan');assert.equal(h.store.modeFor('B'),'grill')
+ assert(h.tools.get('mode_config').parameters.properties.prefs.properties.disablePlanQuestionCard)
+})
+test('manual HTTP transition attaches a view, retires missing-plan status, and sends once without approving a plan', async t => {
+ const h=await harness(t),a=h.add('A');h.add('B')
+ const viewId='view-A-001'
+ assert.equal((await h.api('/dsh-mode/state',{sessionId:'A',viewId,attachView:true})).body.viewId,viewId)
+ await h.api('/dsh-mode/state',{sessionId:'A',mode:'grill'})
+ h.emit('A','turn/start',{turn:1});h.emit('A','turn/end',{turn:1,reason:{kind:'completed'}})
+ const missing=(await h.api('/dsh-mode/state?session=A')).body
+ assert.equal(missing.statusCode,'PLAN_NOT_SUBMITTED');assert(!missing.pendingManual);assert(!missing.pendingExecution)
+ const selected=(await h.api('/dsh-mode/state',{sessionId:'A',viewId,manualTransition:true,mode:'standard'})).body
+ assert(selected.pendingManual);assert(!selected.pendingExecution);assert.equal(selected.planToken,null)
+ assert.equal((await h.api('/dsh-mode/execute',{sessionId:'A',planToken:selected.manualToken})).body.code,'STALE_PLAN')
+ assert.equal((await h.api('/dsh-mode/execute-manual',{sessionId:'A',viewId:'wrong-view',manualToken:selected.manualToken})).body.code,'STALE_MANUAL')
+ const payload={sessionId:'A',viewId,manualToken:selected.manualToken}
+ assert((await h.api('/dsh-mode/execute-manual',payload)).body.ok)
+ assert.equal((await h.api('/dsh-mode/execute-manual',payload)).body.ok,false)
+ assert.equal(a.sent.length,1);assert.equal(a.sent[0].content[0].text,'现在请直接执行任务。')
+ assert.equal((await h.api('/dsh-mode/state?session=B')).body.pendingManual,false)
+})
+test('page reload and manual dispatch errors fail closed, without implicit retry or restoring manual tokens', async t=>{
+ const h=await harness(t),a=h.add('A'),viewId='view-A-001'
+ const transition=async()=>{await h.api('/dsh-mode/state',{sessionId:'A',mode:'plan'});return(await h.api('/dsh-mode/state',{sessionId:'A',mode:'standard',viewId,manualTransition:true})).body}
+ await h.api('/dsh-mode/state',{sessionId:'A',viewId,attachView:true})
+ const old=await transition()
+ await h.api('/dsh-mode/state',{sessionId:'A',viewId:'view-A-002',attachView:true})
+ assert.equal((await h.api('/dsh-mode/execute-manual',{sessionId:'A',viewId,manualToken:old.manualToken})).body.code,'STALE_MANUAL')
+ await h.api('/dsh-mode/state',{sessionId:'A',viewId,attachView:true})
+ const fresh=await transition();let sends=0;a.followup=()=>{sends++;throw Error('transport failed')}
+ const payload={sessionId:'A',viewId,manualToken:fresh.manualToken}
+ assert.equal((await h.api('/dsh-mode/execute-manual',payload)).body.code,'HANDOFF_FAILED')
+ assert.equal((await h.api('/dsh-mode/execute-manual',payload)).body.code,'STALE_MANUAL');assert.equal(sends,1)
 })

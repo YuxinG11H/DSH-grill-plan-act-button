@@ -3,7 +3,7 @@
   "manifestVersion": "0.15",
   "id": "meteornox.dsh-mode-widget",
   "name": "DSH Mode Widget",
-  "version": "0.2.0-rc.1",
+  "version": "0.2.0-rc.2",
   "facets": {
     "host": {
       "entry": "lib/index.js",
@@ -27,7 +27,7 @@
     ]
   },
   "source": {
-    "repository": "https://github.com/MeteorNOX/dsh-mode-widget"
+    "repository": "https://github.com/YuxinG11H/DSH-grill-plan-act-button"
   },
   "license": "MIT"
 }

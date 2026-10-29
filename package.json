@@ -1,6 +1,6 @@
 {
   "name": "dsh-mode-widget",
-  "version": "0.2.0-rc.1",
+  "version": "0.2.0-rc.2",
   "description": "DSH 四态模式轮盘：标准 / 计划 / 审问 / 限制。在输入框旁切换模式，控制模型的行为约束（纯本地，无额外注入时零开销）",
   "keywords": [
     "dsh",
@@ -42,13 +42,13 @@
   "engines": { "node": ">=24" },
   "scripts": {
     "verify": "node scripts/verify.mjs",
-    "test": "node scripts/test-client-contract.mjs && node scripts/test-plan-availability.mjs && node scripts/test-session-core.mjs && node scripts/test-host-core.mjs && node scripts/test-client-state.mjs && node scripts/test-release-safety.mjs"
+    "test": "node scripts/test-client-contract.mjs && node scripts/test-plan-availability.mjs && node scripts/test-session-core.mjs && node scripts/test-host-core.mjs && node scripts/test-client-state.mjs && node scripts/test-planning-policy.mjs && node scripts/test-manual-core.mjs && node scripts/test-manual-client.mjs && node scripts/test-release-safety.mjs"
   },
-  "homepage": "https://github.com/MeteorNOX/dsh-mode-widget#readme",
-  "bugs": { "url": "https://github.com/MeteorNOX/dsh-mode-widget/issues" },
+  "homepage": "https://github.com/YuxinG11H/DSH-grill-plan-act-button#readme",
+  "bugs": { "url": "https://github.com/YuxinG11H/DSH-grill-plan-act-button/issues" },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MeteorNOX/dsh-mode-widget.git"
+    "url": "git+https://github.com/YuxinG11H/DSH-grill-plan-act-button.git"
   }
 }

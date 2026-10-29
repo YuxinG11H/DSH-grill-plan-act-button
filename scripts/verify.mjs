@@ -4,7 +4,7 @@ const root=path.resolve(import.meta.dirname,'..')
 const checks=[
  ['--check','lib/index.js'],['--check','lib/client.js'],['--check','lib/inject.mjs'],
  ['--check','lib/state.mjs'],['--check','lib/session-core.mjs'],['--check','lib/plan-availability.mjs'],['--check','lib/request-policy.mjs'],
- ['scripts/test-client-contract.mjs'],['scripts/test-plan-availability.mjs'],['scripts/test-session-core.mjs'],['scripts/test-host-core.mjs'],['scripts/test-client-state.mjs'],['scripts/test-release-safety.mjs'],
+ ['scripts/test-client-contract.mjs'],['scripts/test-plan-availability.mjs'],['scripts/test-session-core.mjs'],['scripts/test-host-core.mjs'],['scripts/test-client-state.mjs'],['scripts/test-planning-policy.mjs'],['scripts/test-manual-core.mjs'],['scripts/test-manual-client.mjs'],['scripts/test-release-safety.mjs'],
 ]
 for(const args of checks){
  console.log('\n> node '+args.join(' '))

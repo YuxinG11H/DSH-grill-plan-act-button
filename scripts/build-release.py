@@ -27,11 +27,12 @@ RUNTIME_FILES = [
     'assets/限制模式.png', 'assets/限制模式激活中.png',
 ]
 SOURCE_EXTRAS = [
-    'CONTEXT.md', 'RELEASE_NOTES.md', '.github/workflows/ci.yml',
+    'CONTEXT.md', 'RELEASE_NOTES.md', '.github/workflows/ci.yml', '.gitignore',
     'scripts/verify.mjs', 'scripts/build-release.py', 'scripts/test-client-contract.mjs',
     'scripts/test-plan-availability.mjs', 'scripts/test-session-core.mjs',
     'scripts/test-host-core.mjs', 'scripts/test-client-state.mjs',
     'scripts/test-release-safety.mjs', 'scripts/test-slot-server.mjs',
+    'scripts/test-planning-policy.mjs', 'scripts/test-manual-core.mjs', 'scripts/test-manual-client.mjs',
     'scripts/check-live-client.mjs', 'test/fixtures/dsh-slot-core.js', 'test/fixtures/LICENSE.dsh',
 ]
 
@@ -126,7 +127,7 @@ def main():
     }
     metadata = {
         'name': pkg['name'], 'version': version, 'releaseType': 'prerelease' if '-' in version else 'release',
-        'protocolVersion': 2, 'coreBuild': 'session-core-v2-20261028',
+        'protocolVersion': 3, 'coreBuild': 'session-core-v3-planning-manual',
         'verification': {'command': 'node scripts/verify.mjs', 'result': 'passed',
                          'realDshRestartedEndToEnd': 'pending', 'uploaded': False},
         'artifacts': {name: {'bytes': len(data), 'sha256': sha(data)} for name, data in artifacts.items()},
